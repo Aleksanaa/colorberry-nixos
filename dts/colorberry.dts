@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+//
 // ColorBerry: OrangePi Zero 2W plus the JDI colour memory LCD (SPI1),
 // the BB Q20 keyboard (I2C1) and the uwe5622 SDIO WiFi/BT module.
+//
+// Includes sun50i-h618-orangepi-zero2w.dts and sun50i-h616.dtsi from Linux,
+// Copyright (C) 2020, 2023 Arm Ltd., dual-licensed (GPL-2.0+ OR MIT).
 
 #include "sun50i-h618-orangepi-zero2w.dts"
 
