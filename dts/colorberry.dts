@@ -1,0 +1,86 @@
+// ColorBerry: OrangePi Zero 2W plus the JDI colour memory LCD (SPI1),
+// the BB Q20 keyboard (I2C1) and the uwe5622 SDIO WiFi/BT module.
+
+#include "sun50i-h618-orangepi-zero2w.dts"
+
+/ {
+	model = "ColorBerry (OrangePi Zero 2W)";
+
+	reg_vcc33_wifi: vcc33-wifi {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc33-wifi";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		vin-supply = <&reg_vcc5v>;
+	};
+
+	reg_vcc_wifi_io: vcc-wifi-io {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-wifi-io";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+		vin-supply = <&reg_vcc33_wifi>;
+	};
+
+	wifi_pwrseq: wifi-pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		clocks = <&rtc 1>;
+		clock-names = "ext_clock";
+		reset-gpios = <&pio 6 18 GPIO_ACTIVE_LOW>;	/* PG18 */
+		post-power-on-delay-ms = <200>;
+	};
+};
+
+&pio {
+	i2c1_pi_pins: i2c1-pi-pins {
+		pins = "PI7", "PI8";
+		function = "i2c1";
+	};
+};
+
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_pi_pins>;
+	status = "okay";
+
+	beepy_kbd: beepy-kbd@1f {
+		compatible = "beepy-kbd";
+		reg = <0x1f>;
+		interrupt-parent = <&pio>;
+		interrupts = <8 13 IRQ_TYPE_EDGE_FALLING>;	/* PI13 */
+	};
+};
+
+&spi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi1_pins>, <&spi1_cs0_pin>;
+	status = "okay";
+
+	sharp_drm: sharp-drm@0 {
+		compatible = "sharp-drm";
+		reg = <0>;
+		spi-cs-high;
+		spi-max-frequency = <4000000>;
+		vcom-gpios = <&pio 8 14 GPIO_ACTIVE_HIGH>;	/* PI14 */
+		disp-gpios = <&pio 8 5 GPIO_ACTIVE_HIGH>;	/* PI5 */
+		backlit-gpios = <&pio 8 1 GPIO_ACTIVE_HIGH>;	/* PI1 */
+		sidebutton-gpios = <&pio 7 2 GPIO_ACTIVE_HIGH>;	/* PH2 */
+	};
+};
+
+&mmc1 {
+	vmmc-supply = <&reg_vcc33_wifi>;
+	vqmmc-supply = <&reg_vcc_wifi_io>;
+	mmc-pwrseq = <&wifi_pwrseq>;
+	bus-width = <4>;
+	non-removable;
+	mmc-ddr-1_8v;
+	cap-sdio-irq;
+	status = "okay";
+
+	uwe5622: wifi@1 {
+		reg = <1>;
+	};
+};
