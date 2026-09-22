@@ -17,7 +17,10 @@ stdenv.mkDerivation {
     hash = "sha256-eue7QzpgTpsmQuImOTWX6TNwlFNG/7ntZkhunXXfJ6Q=";
   };
 
-  patches = [ ../patches/beepy-kbd-alt-space-meta-jk.patch ];
+  patches = [
+    ../patches/beepy-kbd-alt-space-meta-jk.patch
+    ../patches/beepy-kbd-power-supply.patch
+  ];
 
   # The driver spawns the overlay helper by absolute path; /sbin does not exist.
   postPatch = ''

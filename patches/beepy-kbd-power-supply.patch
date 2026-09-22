@@ -1,0 +1,254 @@
+From: colorberry-nixos
+Subject: [PATCH] beepy-kbd: register the battery with the power supply class
+
+SPDX-License-Identifier: GPL-2.0-only
+
+The driver already reads the pack voltage off the keyboard firmware's ADC
+and reports it under /sys/firmware/beepy, which nothing but a shell script
+knows how to read. Register the same reading as a power_supply class
+device so UPower and everything downstream of it sees a battery.
+
+The firmware has no charger or current sense, so the status stays unknown
+and charge properties are only reported when the design capacity is given
+as the battery_mah module parameter.
+
+diff --git a/Makefile b/Makefile
+index 03e0a7f..878b086 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,8 @@
+ obj-m += beepy-kbd.o
+ beepy-kbd-objs += src/main.o src/params_iface.o src/sysfs_iface.o \
+ 	src/input_iface.o src/input_fw.o src/input_rtc.o src/input_display.o \
+-	src/input_modifiers.o src/input_touch.o src/input_meta.o
++	src/input_modifiers.o src/input_touch.o src/input_meta.o \
++	src/power_supply_iface.o
+ ccflags-y := -g -std=gnu99 -Wno-declaration-after-statement
+ 
+ dtb-y += beepy-kbd.dtbo
+diff --git a/src/main.c b/src/main.c
+index 2e40c44..2ed687d 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -14,6 +14,7 @@
+ 
+ #include "input_iface.h"
+ #include "params_iface.h"
++#include "power_supply_iface.h"
+ #include "sysfs_iface.h"
+ 
+ #if (BBQX0KBD_INT != BBQX0KBD_USE_INT)
+@@ -48,6 +49,11 @@ static int beepy_kbd_probe
+ 		return rc;
+ 	}
+ 
++	// Register the battery with the power supply class
++	if ((rc = power_supply_iface_probe(i2c_client))) {
++		return rc;
++	}
++
+ 	return 0;
+ }
+ 
+diff --git a/src/power_supply_iface.c b/src/power_supply_iface.c
+new file mode 100644
+index 0000000..8f20703
+--- /dev/null
++++ b/src/power_supply_iface.c
+@@ -0,0 +1,153 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Keyboard Driver for Blackberry Keyboards BBQ10 from arturo182. Software written by wallComputer.
++ * power_supply_iface.c: power_supply class device for the pack read over I2C
++ */
++
++#include <linux/types.h>
++#include <linux/i2c.h>
++#include <linux/jiffies.h>
++#include <linux/kernel.h>
++#include <linux/moduleparam.h>
++#include <linux/power_supply.h>
++
++#include "config.h"
++
++#include "power_supply_iface.h"
++#include "sysfs_iface.h"
++
++// Design capacity of the pack in mAh. Charge properties are only reported
++// when set, as the firmware has no way of telling us the real capacity.
++static uint32_t battery_mah_setting = 0;
++module_param_named(battery_mah, battery_mah_setting, uint, 0444);
++MODULE_PARM_DESC(battery_mah, "Design capacity of the battery in mAh");
++
++// The firmware only exposes an ADC reading, so both ends of the usable range
++// are assumed, matching the percentage reported over sysfs.
++#define BATTERY_UV_MIN 3200000
++#define BATTERY_UV_MAX 4200000
++
++// Reading the ADC costs an I2C transaction on the keyboard bus, and a single
++// refresh asks for several properties in a row.
++static int cached_uv;
++static unsigned long cached_at;
++
++static int read_battery_uv(void)
++{
++	int raw;
++
++	if (cached_at && time_before(jiffies, cached_at + HZ)) {
++		return cached_uv;
++	}
++
++	if ((raw = read_raw_battery_level()) < 0) {
++		return raw;
++	}
++
++	// Millivolts first, as the intermediate product would not fit otherwise
++	cached_uv = raw * 330 * 21 / 4095 * 1000;
++	cached_at = jiffies ? jiffies : 1;
++
++	return cached_uv;
++}
++
++static int battery_percent(int uv)
++{
++	if (uv <= BATTERY_UV_MIN) {
++		return 0;
++	} else if (uv >= BATTERY_UV_MAX) {
++		return 100;
++	}
++
++	return (uv - BATTERY_UV_MIN) / ((BATTERY_UV_MAX - BATTERY_UV_MIN) / 100);
++}
++
++static int beepy_battery_get_property(struct power_supply *psy,
++	enum power_supply_property psp, union power_supply_propval *val)
++{
++	int uv;
++
++	switch (psp) {
++	case POWER_SUPPLY_PROP_PRESENT:
++		val->intval = 1;
++		return 0;
++	case POWER_SUPPLY_PROP_STATUS:
++		// The firmware reports no charger state
++		val->intval = POWER_SUPPLY_STATUS_UNKNOWN;
++		return 0;
++	case POWER_SUPPLY_PROP_TECHNOLOGY:
++		val->intval = POWER_SUPPLY_TECHNOLOGY_LION;
++		return 0;
++	case POWER_SUPPLY_PROP_SCOPE:
++		val->intval = POWER_SUPPLY_SCOPE_SYSTEM;
++		return 0;
++	case POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN:
++		val->intval = BATTERY_UV_MIN;
++		return 0;
++	case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
++		val->intval = BATTERY_UV_MAX;
++		return 0;
++	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
++		val->intval = battery_mah_setting * 1000;
++		return 0;
++	default:
++		break;
++	}
++
++	if ((uv = read_battery_uv()) < 0) {
++		return uv;
++	}
++
++	switch (psp) {
++	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
++		val->intval = uv;
++		return 0;
++	case POWER_SUPPLY_PROP_CAPACITY:
++		val->intval = battery_percent(uv);
++		return 0;
++	case POWER_SUPPLY_PROP_CHARGE_NOW:
++		val->intval = battery_mah_setting * 10 * battery_percent(uv);
++		return 0;
++	default:
++		return -EINVAL;
++	}
++}
++
++// The last two entries are dropped unless a design capacity was given
++static enum power_supply_property beepy_battery_props[] = {
++	POWER_SUPPLY_PROP_STATUS,
++	POWER_SUPPLY_PROP_PRESENT,
++	POWER_SUPPLY_PROP_TECHNOLOGY,
++	POWER_SUPPLY_PROP_SCOPE,
++	POWER_SUPPLY_PROP_VOLTAGE_NOW,
++	POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN,
++	POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN,
++	POWER_SUPPLY_PROP_CAPACITY,
++	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
++	POWER_SUPPLY_PROP_CHARGE_NOW,
++};
++
++// num_properties is filled in at probe, and the power supply core keeps
++// hold of the struct
++static struct power_supply_desc beepy_battery_desc = {
++	.name = "beepy-battery",
++	.type = POWER_SUPPLY_TYPE_BATTERY,
++	.properties = beepy_battery_props,
++	.get_property = beepy_battery_get_property,
++};
++
++int power_supply_iface_probe(struct i2c_client* i2c_client)
++{
++	struct power_supply_config cfg = { };
++	struct power_supply *psy;
++
++	beepy_battery_desc.num_properties = ARRAY_SIZE(beepy_battery_props)
++		- (battery_mah_setting ? 0 : 2);
++
++	psy = devm_power_supply_register(&i2c_client->dev, &beepy_battery_desc, &cfg);
++	if (IS_ERR(psy)) {
++		return PTR_ERR(psy);
++	}
++
++	return 0;
++}
+diff --git a/src/power_supply_iface.h b/src/power_supply_iface.h
+new file mode 100644
+index 0000000..0dbde97
+--- /dev/null
++++ b/src/power_supply_iface.h
+@@ -0,0 +1,11 @@
++#ifndef POWER_SUPPLY_IFACE_H_
++#define POWER_SUPPLY_IFACE_H_
++
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Keyboard Driver for Blackberry Keyboards BBQ10 from arturo182. Software written by wallComputer.
++ */
++
++int power_supply_iface_probe(struct i2c_client* i2c_client);
++
++#endif
+diff --git a/src/sysfs_iface.c b/src/sysfs_iface.c
+index c41a07b..a496407 100644
+--- a/src/sysfs_iface.c
++++ b/src/sysfs_iface.c
+@@ -20,7 +20,7 @@
+ #include "sysfs_iface.h"
+ 
+ // Read battery level over I2C
+-static int read_raw_battery_level(void)
++int read_raw_battery_level(void)
+ {
+ 	int rc;
+ 	uint8_t battery_level[2];
+diff --git a/src/sysfs_iface.h b/src/sysfs_iface.h
+index b037fdb..9c74ce3 100644
+--- a/src/sysfs_iface.h
++++ b/src/sysfs_iface.h
+@@ -6,6 +6,8 @@
+  * Keyboard Driver for Blackberry Keyboards BBQ10 from arturo182. Software written by wallComputer.
+  */
+ 
++int read_raw_battery_level(void);
++
+ int sysfs_probe(struct i2c_client* i2c_client);
+ void sysfs_shutdown(struct i2c_client* i2c_client);
+ 
