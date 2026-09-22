@@ -1,5 +1,10 @@
 # NixOS for ColorBerry
 
+
+<p align="center">
+  <img width="360" height="480" alt="colorberry_nixos" src="https://github.com/user-attachments/assets/c8e8ae17-9d2f-44c0-ad9e-b3b202de13d3" />
+</p>
+
 Pure NixOS for colorberry, 6.18 LTS kernel (latest LTS at the time of writing), pretty much everything works the same way as stock Debian image.
 
 Using & modifying this system requires understanding of Nix/NixOS. [NixOS Setup Guide - Configuration / Home-Manager / Flakes](https://www.youtube.com/watch?v=AGVXJ-TIv3Y&t=1109s) walks through the basics; you can also discuss in https://matrix.to/#/#users:nixos.org or https://t.me/nixos_zhcn.
