@@ -37,6 +37,7 @@
     tmux
     tree
     pfetch
+    iw
   ];
 
   documentation = {
