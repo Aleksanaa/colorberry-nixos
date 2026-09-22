@@ -55,6 +55,8 @@ in
       options beepy-kbd sharp_path=${cfg.keyboard.drmDevice} touch_as=${cfg.keyboard.touchMode} touch_act=${cfg.keyboard.touchActivation}
     '';
 
+    environment.systemPackages = [ config.boot.kernelPackages.symbol-overlay ];
+
     console.keyMap = lib.mkIf cfg.keyboard.keyMap "${config.boot.kernelPackages.beepy-kbd}/share/keymaps/beepy-kbd.map";
 
     systemd.tmpfiles.rules = [

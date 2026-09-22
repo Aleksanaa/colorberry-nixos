@@ -14,6 +14,7 @@ final: prev: {
       sharp-drm = kfinal.callPackage ./sharp-drm.nix { };
       beepy-kbd = kfinal.callPackage ./beepy-kbd.nix { };
       uwe5622 = kfinal.callPackage ./uwe5622.nix { };
+      symbol-overlay = final.callPackage ./symbol-overlay.nix { inherit (kfinal) beepy-kbd; };
     }
   );
 }

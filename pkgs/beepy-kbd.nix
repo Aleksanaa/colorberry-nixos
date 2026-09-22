@@ -19,7 +19,12 @@ stdenv.mkDerivation {
 
   patches = [ ../patches/beepy-kbd-alt-space-meta-jk.patch ];
 
-  postPatch = "substituteInPlace Makefile --replace-fail 'dtb-y += beepy-kbd.dtbo' ''";
+  # The driver spawns the overlay helper by absolute path; /sbin does not exist.
+  postPatch = ''
+    substituteInPlace Makefile --replace-fail 'dtb-y += beepy-kbd.dtbo' ""
+    substituteInPlace src/input_meta.c src/input_modifiers.c \
+      --replace-fail /sbin/symbol-overlay /run/current-system/sw/bin/symbol-overlay
+  '';
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
