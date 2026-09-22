@@ -1,0 +1,44 @@
+name: SD image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 360
+
+    steps:
+      - name: Reclaim disk space for /nix
+        uses: wimpysworld/nothing-but-nix@main
+        with:
+          hatchet-protocol: cleave
+
+      - uses: actions/checkout@v7
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.arch }}-${{ hashFiles('flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.arch }}-
+          gc-max-store-size-linux: 5G
+
+      - name: Build the SD image
+        run: nix build .#sdImage --print-build-logs
+
+      - name: Locate the image
+        id: image
+        run: |
+          img=$(realpath result/sd-image/*.img)
+          echo "path=$img" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$img")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.image.outputs.name }}
+          path: ${{ steps.image.outputs.path }}
+          if-no-files-found: error
