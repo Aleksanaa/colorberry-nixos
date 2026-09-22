@@ -40,6 +40,12 @@ in
       description = "DRM device of the memory LCD, used to draw indicators and the Berry overlay.";
     };
 
+    trackpadCursor = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Run gpm so the trackpad moves a console cursor and selects text.";
+    };
+
     keyMap = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -57,6 +63,11 @@ in
 
     environment.systemPackages = [ config.boot.kernelPackages.symbol-overlay ];
 
+    services.gpm = lib.mkIf cfg.keyboard.trackpadCursor {
+      enable = true;
+      protocol = "exps2";
+    };
+
     console.keyMap = lib.mkIf cfg.keyboard.keyMap "${config.boot.kernelPackages.beepy-kbd}/share/keymaps/beepy-kbd.map";
 
     # Alt+I is keycode 142, which is KEY_SLEEP, but we put it to `-`
@@ -70,8 +81,8 @@ in
     ];
 
     environment.shellAliases = {
-      key = "echo keys | sudo tee ${params}/touch_as";
-      mouse = "echo mouse | sudo tee ${params}/touch_as";
+      key = "echo keys | sudo tee ${params}/touch_as > /dev/null";
+      mouse = "echo mouse | sudo tee ${params}/touch_as > /dev/null";
     };
   };
 }
