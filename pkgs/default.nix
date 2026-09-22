@@ -3,6 +3,8 @@ final: prev: {
 
   uwe5622-firmware = final.callPackage ./uwe5622-firmware.nix { };
 
+  colorberry-sidebutton = final.callPackage ./colorberry-sidebutton { };
+
   colorberryKernel = final.linux_6_18;
 
   colorberryDtb = final.callPackage ./dtb.nix {
