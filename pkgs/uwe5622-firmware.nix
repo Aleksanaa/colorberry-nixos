@@ -18,7 +18,8 @@ let
   # unisocwifi builds the RF table name from those.
   files = {
     "wcnmodem.bin" = fetch "wcnmodem.bin" "sha256-EZuHzjCHVzSmdGL3KT+4/oWs8ycP6LeMl4riS+dxWoA=";
-    "wifi_2355b001_1ant.ini" = fetch "wifi_2355b001_1ant.ini" "sha256-HzxA7CRajQuZrRwjcGWX1t1QCKuAzvt7zBlW78TpOPc=";
+    "wifi_2355b001_1ant.ini" =
+      fetch "wifi_2355b001_1ant.ini" "sha256-HzxA7CRajQuZrRwjcGWX1t1QCKuAzvt7zBlW78TpOPc=";
   };
 in
 stdenvNoCC.mkDerivation {

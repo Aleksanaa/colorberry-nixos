@@ -19,7 +19,10 @@ stdenv.mkDerivation {
 
   sourceRoot = "source/orangepi-src";
 
-  patches = [ ../patches/sharp-drm-linux-6.18.patch ];
+  patches = [
+    ../patches/sharp-drm-linux-6.18.patch
+    ../patches/sharp-drm-optional-sidebutton.patch
+  ];
 
   postPatch = "substituteInPlace Makefile --replace-fail 'dtb-y += sharp-drm.dtbo' ''";
 

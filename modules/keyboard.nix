@@ -30,8 +30,8 @@ in
 
     backlight = lib.mkOption {
       type = lib.types.ints.between 0 255;
-      default = 0;
-      description = "Keyboard backlight brightness applied at boot.";
+      default = 255;
+      description = "Keyboard backlight brightness used when the backlight is on.";
     };
 
     drmDevice = lib.mkOption {
@@ -58,7 +58,7 @@ in
     console.keyMap = lib.mkIf cfg.keyboard.keyMap "${config.boot.kernelPackages.beepy-kbd}/share/keymaps/beepy-kbd.map";
 
     systemd.tmpfiles.rules = [
-      "w /sys/firmware/beepy/keyboard_backlight - - - - ${toString cfg.keyboard.backlight}"
+      "w /sys/firmware/beepy/keyboard_backlight - - - - 0"
     ];
 
     environment.shellAliases = {

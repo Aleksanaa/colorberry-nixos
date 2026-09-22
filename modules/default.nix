@@ -5,6 +5,7 @@
     ./hardware.nix
     ./display.nix
     ./keyboard.nix
+    ./sidebutton.nix
     ./wireless.nix
     ./sd-image.nix
   ];

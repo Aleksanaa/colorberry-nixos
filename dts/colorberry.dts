@@ -71,7 +71,6 @@
 		vcom-gpios = <&pio 8 14 GPIO_ACTIVE_HIGH>;	/* PI14 */
 		disp-gpios = <&pio 8 5 GPIO_ACTIVE_HIGH>;	/* PI5 */
 		backlit-gpios = <&pio 8 1 GPIO_ACTIVE_HIGH>;	/* PI1 */
-		sidebutton-gpios = <&pio 7 2 GPIO_ACTIVE_HIGH>;	/* PH2 */
 	};
 };
 

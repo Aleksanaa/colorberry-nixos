@@ -1,0 +1,52 @@
+From: colorberry-nixos
+Subject: [PATCH] sharp-drm: make the side button optional
+
+SPDX-License-Identifier: GPL-2.0-or-later
+
+The driver unconditionally claims the side button GPIO and requests an
+IRQ for it, so userspace cannot get at the line. The stock OrangePi
+image has no side button support in the driver at all and drives the
+line from userspace, which is what lets one press toggle both the
+display and the keyboard backlight.
+
+Treat sidebutton-gpios as optional. With the property absent the line
+stays free for a userspace handler, which toggles the backlit module
+parameter as before.
+
+--- a/src/drm_iface.c
++++ b/src/drm_iface.c
+@@ -938,7 +938,7 @@
+ 
+ 	panel->gpio_vcom = devm_gpiod_get(dev, "vcom", GPIOD_OUT_LOW);
+ 	panel->gpio_backlit = devm_gpiod_get(dev, "backlit", GPIOD_OUT_LOW);
+-	panel->gpio_sidebutton = devm_gpiod_get(dev, "sidebutton", GPIOD_IN);
++	panel->gpio_sidebutton = devm_gpiod_get_optional(dev, "sidebutton", GPIOD_IN);
+ 	if (IS_ERR(panel->gpio_vcom))
+ 		return dev_err_probe(dev, PTR_ERR(panel->gpio_vcom), "Failed to get GPIO 'vcom'\n");
+ 	if (IS_ERR(panel->gpio_backlit))
+@@ -946,15 +946,17 @@
+ 	if (IS_ERR(panel->gpio_sidebutton))
+ 		return dev_err_probe(dev, PTR_ERR(panel->gpio_sidebutton), "Failed to get GPIO 'sidebutton'\n");
+ 
+-	panel->sidebutton_irq = gpiod_to_irq(panel->gpio_sidebutton);
+-	if (panel->sidebutton_irq < 0)
+-		return dev_err_probe(dev, panel->sidebutton_irq, "Failed to get side button IRQ\n");
++	if (panel->gpio_sidebutton) {
++		panel->sidebutton_irq = gpiod_to_irq(panel->gpio_sidebutton);
++		if (panel->sidebutton_irq < 0)
++			return dev_err_probe(dev, panel->sidebutton_irq, "Failed to get side button IRQ\n");
+ 
+-	ret = devm_request_threaded_irq(dev, panel->sidebutton_irq, NULL,
+-									sidebutton_irq_handler, IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
+-									"sharp-drm-sidebutton", panel);
+-	if (ret)
+-		return dev_err_probe(dev, ret, "Failed to request side button IRQ\n");
++		ret = devm_request_threaded_irq(dev, panel->sidebutton_irq, NULL,
++										sidebutton_irq_handler, IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
++										"sharp-drm-sidebutton", panel);
++		if (ret)
++			return dev_err_probe(dev, ret, "Failed to request side button IRQ\n");
++	}
+ 
+ 	// Initalize DRM mode
+ 	drm = &panel->drm;
