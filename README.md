@@ -2,7 +2,8 @@
 
 
 <p align="center">
-  <img width="360" height="480" alt="colorberry_nixos" src="https://github.com/user-attachments/assets/c8e8ae17-9d2f-44c0-ad9e-b3b202de13d3" />
+  <img width="360" height="480" alt="image" src="https://github.com/user-attachments/assets/12653c46-5eab-4d23-95df-b6df6268bece" />
+
 </p>
 
 Pure NixOS for colorberry, 6.18 LTS kernel (latest LTS at the time of writing), pretty much everything works the same way as stock Debian image.
