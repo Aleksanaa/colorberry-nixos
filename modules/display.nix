@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 
@@ -48,6 +49,9 @@ in
       "fbcon=font:${cfg.display.consoleFont}"
       "fbcon=map:10"
     ];
+
+    # Same as what stock rom uses
+    console.font = lib.mkDefault "${pkgs.terminus_font}/share/consolefonts/ter-112n.psf.gz";
 
     # The DRM minor number is not stable, so give the panel a fixed name.
     services.udev.extraRules = ''
