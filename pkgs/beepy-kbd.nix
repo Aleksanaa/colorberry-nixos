@@ -38,8 +38,10 @@ stdenv.mkDerivation {
   installFlags = [ "INSTALL_MOD_PATH=${placeholder "out"}" ];
   installTargets = [ "modules_install" ];
 
+  # loadkeys rejects the map without a final newline
   postInstall = ''
-    install -Dm444 beepy-kbd.map $out/share/keymaps/beepy-kbd.map
+    { cat beepy-kbd.map; echo; } > keymap
+    install -Dm444 keymap $out/share/keymaps/beepy-kbd.map
   '';
 
   meta = {
