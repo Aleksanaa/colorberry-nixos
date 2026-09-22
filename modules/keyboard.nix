@@ -59,6 +59,12 @@ in
 
     console.keyMap = lib.mkIf cfg.keyboard.keyMap "${config.boot.kernelPackages.beepy-kbd}/share/keymaps/beepy-kbd.map";
 
+    # Alt+I is keycode 142, which is KEY_SLEEP, but we put it to `-`
+    services.logind.settings.Login = {
+      HandleSuspendKey = lib.mkDefault "ignore";
+      HandleSuspendKeyLongPress = lib.mkDefault "ignore";
+    };
+
     systemd.tmpfiles.rules = [
       "w /sys/firmware/beepy/keyboard_backlight - - - - 0"
     ];
