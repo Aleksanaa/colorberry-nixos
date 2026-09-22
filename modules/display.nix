@@ -49,6 +49,11 @@ in
       "fbcon=map:10"
     ];
 
+    # The DRM minor number is not stable, so give the panel a fixed name.
+    services.udev.extraRules = ''
+      SUBSYSTEM=="drm", KERNEL=="card[0-9]*", DRIVERS=="sharp-drm", SYMLINK+="dri/sharp"
+    '';
+
     environment.shellAliases = {
       d0 = "echo 0 | sudo tee ${params}/dither";
       d3 = "echo 3 | sudo tee ${params}/dither";

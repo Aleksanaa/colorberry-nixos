@@ -36,8 +36,8 @@ in
 
     drmDevice = lib.mkOption {
       type = lib.types.str;
-      default = "/dev/dri/card1";
-      description = "DRM device of the memory LCD, used to draw keyboard indicators.";
+      default = "/dev/dri/sharp";
+      description = "DRM device of the memory LCD, used to draw indicators and the Berry overlay.";
     };
 
     keyMap = lib.mkOption {
