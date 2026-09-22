@@ -1,0 +1,73 @@
+From: colorberry-nixos
+Subject: [PATCH] beepy-kbd: Alt+Space input method switch, Berry J/K paging
+
+SPDX-License-Identifier: GPL-2.0-or-later
+
+Three changes carried over from the stock image's patch-beepy-kbd.sh:
+
+ * Alt + Space synthesises Control + Space, which is what fcitx listens
+   for to switch input methods under fbterm. Alt + <letter> still maps
+   to the +119 symbol layer, so the symbols printed on the keys are
+   unaffected.
+ * Berry + J and Berry + K page up and down, alongside the existing
+   O and P bindings.
+ * A keycode of KEY_RESERVED is no longer reported. The Alt + Space
+   path returns it to swallow the physical key, and reporting it
+   reaches fbterm as keycode 0 and draws <ffffffff>.
+
+The press/release pair arrives as two calls with no state to tell them
+apart, so the injection is gated on a static toggle and the second call
+is dropped.
+
+--- a/src/input_modifiers.c
++++ b/src/input_modifiers.c
+@@ -103,6 +103,22 @@
+ 		return keycode;
+ 	}
+ 
++	// Alt + Space sends Control + Space for input method switching, while
++	// Alt + <letter> keeps the +119 symbol layer printed on the keys.
++	if (keycode == KEY_SPACE) {
++		static uint8_t toggle;
++		if (!toggle) {
++			input_report_key(ctx->input_dev, KEY_LEFTCTRL, TRUE);
++			input_report_key(ctx->input_dev, KEY_SPACE, TRUE);
++			input_report_key(ctx->input_dev, KEY_SPACE, FALSE);
++			input_report_key(ctx->input_dev, KEY_LEFTCTRL, FALSE);
++		}
++		// Second call is the matching release, swallow it
++		toggle = !toggle;
++		g_current_phys_alt_keycode = 0;
++		return KEY_RESERVED;
++	}
++
+ 	keycode += 119; // See map file for result keys
+ 	g_current_phys_alt_keycode = keycode;
+ 	return keycode;
+--- a/src/input_meta.c
++++ b/src/input_meta.c
+@@ -112,6 +112,9 @@
+ 	case KEY_O: return KEY_PAGEUP;
+ 	case KEY_P: return KEY_PAGEDOWN;
+ 
++	case KEY_J: return KEY_PAGEUP;
++	case KEY_K: return KEY_PAGEDOWN;
++
+ 	case KEY_Q: return 172;
+ 	case KEY_A: return 173;
+ 	}
+--- a/src/input_iface.c
++++ b/src/input_iface.c
+@@ -91,8 +91,10 @@
+ 	// Apply pending sticky modifiers
+ 	keycode = input_modifiers_apply_pending(ctx, keycode);
+ 
+-	// Report key to input system
+-	input_report_key(ctx->input_dev, keycode, ev->state == KEY_STATE_PRESSED);
++	// Report key to input system, skipping keys swallowed above
++	if (keycode != KEY_RESERVED) {
++		input_report_key(ctx->input_dev, keycode, ev->state == KEY_STATE_PRESSED);
++	}
+ 
+ 	// Reset sticky modifiers
+ 	input_modifiers_reset(ctx);

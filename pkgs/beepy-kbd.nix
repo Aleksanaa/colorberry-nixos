@@ -17,6 +17,8 @@ stdenv.mkDerivation {
     hash = "sha256-eue7QzpgTpsmQuImOTWX6TNwlFNG/7ntZkhunXXfJ6Q=";
   };
 
+  patches = [ ../patches/beepy-kbd-alt-space-meta-jk.patch ];
+
   postPatch = "substituteInPlace Makefile --replace-fail 'dtb-y += beepy-kbd.dtbo' ''";
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
