@@ -28,6 +28,9 @@ stdenvNoCC.mkDerivation {
 
   dontUnpack = true;
 
+  # The driver opens the files with filp_open, so they must stay uncompressed
+  passthru.compressFirmware = false;
+
   installPhase = ''
     runHook preInstall
     ${lib.concatStringsSep "\n" (

@@ -29,11 +29,26 @@
 		vin-supply = <&reg_vcc33_wifi>;
 	};
 
+	reg_wifi_en: wifi-en {
+		compatible = "regulator-fixed";
+		regulator-name = "wifi-en";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpio = <&pio 6 18 GPIO_ACTIVE_HIGH>;	/* PG18, chip reset */
+		enable-active-high;
+		startup-delay-us = <200000>;
+		vin-supply = <&reg_vcc33_wifi>;
+	};
+
+	// reset-gpios is omitted on purpose: with a 3-cell GPIO controller the
+	// reset-gpio fallback in the reset core fails the probe, so PG18 is
+	// driven by reg_wifi_en instead.
 	wifi_pwrseq: wifi-pwrseq {
 		compatible = "mmc-pwrseq-simple";
-		clocks = <&rtc 1>;
+		clocks = <&rtc CLK_OSC32K_FANOUT>;
 		clock-names = "ext_clock";
-		reset-gpios = <&pio 6 18 GPIO_ACTIVE_LOW>;	/* PG18 */
+		pinctrl-names = "default";
+		pinctrl-0 = <&x32clk_fanout_pin>;
 		post-power-on-delay-ms = <200>;
 	};
 };
@@ -75,7 +90,7 @@
 };
 
 &mmc1 {
-	vmmc-supply = <&reg_vcc33_wifi>;
+	vmmc-supply = <&reg_wifi_en>;
 	vqmmc-supply = <&reg_vcc_wifi_io>;
 	mmc-pwrseq = <&wifi_pwrseq>;
 	bus-width = <4>;
