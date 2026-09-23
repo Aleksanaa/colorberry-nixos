@@ -12,6 +12,18 @@ Using & modifying this system requires understanding of Nix/NixOS. [NixOS Setup 
 
 ## Installation
 
+Download an image from the artifact of workflows ("Actions"). It is a zip containing `nixos-image-sd-card-*-aarch64-linux.img`. Or build one yourself, see [Building the image](#building-the-image).
+
+Write the image to SD card (Do check which device is SD card!!!)
+
+```
+dd if=nixos-image-sd-card-*-aarch64-linux.img of=/dev/sda
+```
+
+Put the card back. Reboot. The default username is `colorberry` and password is `colorberry` too.
+
+## Building the image
+
 Firstly, you need to get an ARM64 Linux machine with Nix installed. See https://nixos.org/download/ for how to install Nix. If you are using a x86_64 Linux machine, you can enable aarch64 emulation by adding this in `/etc/nix/nix.conf`:
 
 ```
@@ -29,13 +41,7 @@ Then just build the image:
 nix build .#sdImage
 ```
 
-Write the image to SD card (Do check which device is SD card!!!)
-
-```
-dd if=./result/sd-image/nixos-image-sd-card-*-aarch64-linux.img of=/dev/sda
-```
-
-Put the card back. Reboot. The default username is `colorberry` and password is `colorberry` too.
+The result is at `./result/sd-image/nixos-image-sd-card-*-aarch64-linux.img`.
 
 ## Modification
 
