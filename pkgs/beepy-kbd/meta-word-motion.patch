@@ -1,0 +1,115 @@
+From: colorberry-nixos
+Subject: [PATCH] beepy-kbd: send Control + arrow for Meta Q/A
+
+SPDX-License-Identifier: GPL-2.0-or-later
+
+Meta Q and A used to report keycodes 172 and 173, which the shipped
+console keymap turned into the Control + Left and Control + Right escape
+sequences with a string binding. Nothing outside that keymap knew what
+the two keycodes meant, and XKB cannot attach a modifier to a keysym at
+all, so every other consumer saw a dead key.
+
+Report the arrow with Control held instead. The word-wise motion then
+works in any terminal, and no keymap needs a private keycode for it.
+
+--- a/src/input_meta.c
++++ b/src/input_meta.c
+@@ -20,6 +20,8 @@
+ // Store the last keycode sent to simulate a key
+ // up event when the key is released after Meta is exited
+ static uint8_t g_current_meta_keycode;
++// Whether that keycode was sent with Control held
++static uint8_t g_current_meta_ctrl;
+ 
+ // Call Meta menu overlay helper
+ // Will return normally if overlay is not installed
+@@ -115,18 +117,30 @@
+ 	case KEY_J: return KEY_PAGEUP;
+ 	case KEY_K: return KEY_PAGEDOWN;
+ 
+-	case KEY_Q: return 172;
+-	case KEY_A: return 173;
++	case KEY_Q: return KEY_LEFT;
++	case KEY_A: return KEY_RIGHT;
+ 	}
+ 
+ 	return 0;
+ }
+ 
++// Meta Q and A move by word, which is Control plus the arrow
++static bool is_control_key(uint8_t keycode)
++{
++	switch (keycode) {
++	case KEY_Q: return TRUE;
++	case KEY_A: return TRUE;
++	}
++
++	return FALSE;
++}
++
+ int input_meta_probe(struct i2c_client* i2c_client, struct kbd_ctx *ctx)
+ {
+ 	g_enabled = 0;
+ 	g_showing_indicator = 0;
+ 	g_showing_overlay = 0;
++	g_current_meta_ctrl = 0;
+ 
+ 	return 0;
+ }
+@@ -140,6 +154,7 @@
+ 	uint8_t *remapped_keycode, uint8_t keycode, uint8_t state)
+ {
+ 	uint8_t simulated_keycode;
++	bool pressed, needs_ctrl;
+ 
+ 	// Not in meta mode
+ 	if (!g_enabled) {
+@@ -197,14 +212,23 @@
+ 		return 0;
+ 	}
+ 
+-	// Report key to input system
+-	input_report_key(ctx->input_dev, simulated_keycode,
+-		state == KEY_STATE_PRESSED);
++	pressed = (state == KEY_STATE_PRESSED);
++	needs_ctrl = is_control_key(keycode);
++
++	// Report key to input system, wrapped in Control if the mapping needs it
++	if (needs_ctrl && pressed) {
++		input_report_key(ctx->input_dev, KEY_LEFTCTRL, TRUE);
++	}
++
++	input_report_key(ctx->input_dev, simulated_keycode, pressed);
++
++	if (needs_ctrl && !pressed) {
++		input_report_key(ctx->input_dev, KEY_LEFTCTRL, FALSE);
++	}
+ 
+ 	// Save remapped key
+-	g_current_meta_keycode = (state == KEY_STATE_PRESSED)
+-		? simulated_keycode
+-		: 0;
++	g_current_meta_keycode = pressed ? simulated_keycode : 0;
++	g_current_meta_ctrl = pressed ? needs_ctrl : 0;
+ 
+ 	return 1;
+ }
+@@ -213,6 +237,7 @@
+ {
+ 	g_enabled = 1;
+ 	g_current_meta_keycode = 0;
++	g_current_meta_ctrl = 0;
+ 
+ 	// Set display indicator
+ 	if (!g_showing_indicator) {
+@@ -235,5 +260,10 @@
+ 	if (g_current_meta_keycode) {
+ 		input_report_key(ctx->input_dev, g_current_meta_keycode, FALSE);
+ 		g_current_meta_keycode = 0;
++
++		if (g_current_meta_ctrl) {
++			input_report_key(ctx->input_dev, KEY_LEFTCTRL, FALSE);
++			g_current_meta_ctrl = 0;
++		}
+ 	}
+ }

@@ -20,6 +20,7 @@ stdenv.mkDerivation {
   patches = [
     ./alt-space-meta-jk.patch
     ./power-supply.patch
+    ./meta-word-motion.patch
   ];
 
   # The driver spawns the overlay helper by absolute path; /sbin does not exist.
@@ -40,12 +41,6 @@ stdenv.mkDerivation {
   buildFlags = [ "modules" ];
   installFlags = [ "INSTALL_MOD_PATH=${placeholder "out"}" ];
   installTargets = [ "modules_install" ];
-
-  # loadkeys rejects the map without a final newline
-  postInstall = ''
-    { cat beepy-kbd.map; echo; } > keymap
-    install -Dm444 keymap $out/share/keymaps/beepy-kbd.map
-  '';
 
   meta = {
     description = "Keyboard driver for the BB Q20 keyboard on ColorBerry";

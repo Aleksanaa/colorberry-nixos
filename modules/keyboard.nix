@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 
@@ -49,7 +50,7 @@ in
     keyMap = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Use the beepy console keymap.";
+      description = "Use the ColorBerry console keymap, generated from the XKB layout.";
     };
   };
 
@@ -68,7 +69,7 @@ in
       protocol = "exps2";
     };
 
-    console.keyMap = lib.mkIf cfg.keyboard.keyMap "${config.boot.kernelPackages.beepy-kbd}/share/keymaps/beepy-kbd.map";
+    console.keyMap = lib.mkIf cfg.keyboard.keyMap "${pkgs.colorberry-keymap}/share/keymaps/colorberry.map";
 
     # Alt+I is keycode 142, which is KEY_SLEEP, but we put it to `-`
     services.logind.settings.Login = {

@@ -1,0 +1,88 @@
+// BB Q20 keyboard on ColorBerry.
+//
+// The driver resolves its own Alt layer in kernel space and emits a distinct
+// keycode per Alt combination, so those arrive as plain single-level keys.
+// The Symbol key is reported as RightAlt and drives the third level.
+// Meta mode (Berry key) already emits real arrows, Home/End and PageUp/Down.
+
+default partial alphanumeric_keys modifier_keys
+xkb_symbols "basic" {
+
+    include "us(basic)"
+    include "level3(ralt_switch)"
+
+    name[Group1] = "English (ColorBerry BB Q20)";
+
+    // Symbol layer
+    key <AD01> { [ q, Q, asciitilde,     asciitilde     ] };
+    key <AD02> { [ w, W, grave,          grave          ] };
+    key <AD03> { [ e, E, braceleft,      braceleft      ] };
+    key <AD04> { [ r, R, braceright,     braceright     ] };
+    key <AD05> { [ t, T, bracketleft,    bracketleft    ] };
+    key <AD06> { [ y, Y, bracketright,   bracketright   ] };
+    key <AD07> { [ u, U, less,           less           ] };
+    key <AD08> { [ i, I, greater,        greater        ] };
+    key <AD09> { [ o, O, asciicircum,    asciicircum    ] };
+    key <AD10> { [ p, P, percent,        percent        ] };
+
+    key <AC01> { [ a, A, equal,          equal          ] };
+    key <AC02> { [ s, S, division,       division       ] };
+    key <AC03> { [ d, D, plusminus,      plusminus      ] };
+    key <AC04> { [ f, F, periodcentered, periodcentered ] };
+    key <AC05> { [ g, G, backslash,      backslash      ] };
+    key <AC06> { [ h, H, bar,            bar            ] };
+    key <AC07> { [ j, J, ampersand,      ampersand      ] };
+    key <AC08> { [ k, K, quotedbl,       quotedbl       ] };
+    key <AC09> { [ l, L, quotedbl,       quotedbl       ] };
+
+    key <AB01> { [ z, Z, yen,            yen            ] };
+    key <AB02> { [ x, X, EuroSign,       EuroSign       ] };
+    key <AB03> { [ c, C, sterling,       sterling       ] };
+    key <AB04> { [ v, V, questiondown,   questiondown   ] };
+    key <AB05> { [ b, B, exclamdown,     exclamdown     ] };
+    key <AB06> { [ n, N, guillemotleft,  guillemotleft  ] };
+    key <AB07> { [ m, M, guillemotright, guillemotright ] };
+
+    // Dollar key, and Alt on it
+    key <MUTE> { [ dollar ] };
+    key <I240> { [ asciitilde ] };
+
+    // Alt layer, top row
+    key <FIND> { [ 1 ] };
+    key  <CUT> { [ 2 ] };
+    key <HELP> { [ 3 ] };
+    key <I158> { [ 4 ] };
+    key <I159> { [ 5 ] };
+    key <I160> { [ 6 ] };
+    key <I171> { [ 7 ] };
+    key <I172> { [ 8 ] };
+    key <I173> { [ 9 ] };
+    key <PROP> { [ 0 ] };
+
+    // Alt layer, punctuation
+    key <I147> { [ parenleft ] };
+    key <I148> { [ parenright ] };
+    key <I149> { [ underscore ] };
+    key <I150> { [ minus ] };
+    key <I151> { [ plus ] };
+    key <I152> { [ at ] };
+    key <PAST> { [ numbersign ] };
+    key <I157> { [ asterisk ] };
+    key <I161> { [ slash ] };
+    key <I162> { [ colon ] };
+    key <I163> { [ semicolon ] };
+    key <I164> { [ apostrophe ] };
+    key <I165> { [ quotedbl ] };
+    key <I174> { [ question ] };
+    key <I175> { [ exclam ] };
+    key <I176> { [ comma ] };
+    key <I177> { [ period ] };
+
+    // Alt on Enter and Backspace
+    key <I155> { [ Tab ] };
+    key <COPY> { [ Delete ] };
+
+    // Power key taps, held as Control by the driver
+    key <I179> { [ b ] };
+    key <I182> { [ e ] };
+};

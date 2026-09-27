@@ -3,6 +3,7 @@
 {
   imports = [
     ./hardware.nix
+    ./console.nix
     ./display.nix
     ./keyboard.nix
     ./battery.nix

@@ -3,6 +3,13 @@ final: prev: {
 
   uwe5622-firmware = final.callPackage ./uwe5622-firmware.nix { };
 
+  ghostcon = final.callPackage ./ghostcon.nix {
+    # ghostcon predates the libghostty-vt 2026-08-06 API break
+    libghostty-vt = final.callPackage ./libghostty-vt { };
+  };
+
+  colorberry-keymap = final.callPackage ./keymap { };
+
   colorberry-sidebutton = final.callPackage ./colorberry-sidebutton { };
 
   colorberryKernel = final.linux_6_18;
