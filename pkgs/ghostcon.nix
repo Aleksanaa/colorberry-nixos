@@ -35,8 +35,8 @@ stdenv.mkDerivation {
   src = fetchFromGitHub {
     owner = "Aleksanaa";
     repo = "ghostcon";
-    rev = "2a14e9bcdb1ec8e5d0d6768757401ea948c81566";
-    hash = "sha256-QJFfS+vKrNgYSwybttoX3qf7HG3+5M1oXQ4hDeBpLds=";
+    rev = "dbb819147a929e5ac798d3055f5d4c3bfded768f";
+    hash = "sha256-ja6l2j1K8szEhsMQWSZw+hsS45Jid0Z4kXjaKOfH6Os=";
   };
 
   postPatch = ''
