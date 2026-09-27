@@ -18,8 +18,8 @@ stdenv.mkDerivation {
   };
 
   patches = [
-    ../patches/beepy-kbd-alt-space-meta-jk.patch
-    ../patches/beepy-kbd-power-supply.patch
+    ./alt-space-meta-jk.patch
+    ./power-supply.patch
   ];
 
   # The driver spawns the overlay helper by absolute path; /sbin does not exist.

@@ -1,4 +1,5 @@
 {
+  lib,
   stdenv,
   dtc,
   kernel,
@@ -7,7 +8,10 @@
 stdenv.mkDerivation {
   name = "colorberry-dtb";
 
-  src = ../dts;
+  src = lib.fileset.toSource {
+    root = ./.;
+    fileset = ./colorberry.dts;
+  };
 
   nativeBuildInputs = [ dtc ];
 
